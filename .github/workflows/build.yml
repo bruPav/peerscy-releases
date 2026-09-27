@@ -58,9 +58,26 @@ jobs:
           esac
           echo "matrix={\"os\":$M}" >> "$GITHUB_OUTPUT"
 
+  # Fail fast if a copyleft dependency (e.g. GPL) re-enters the tree: Revyou is
+  # distributed as a proprietary binary. Uses the private source's deny.toml.
+  licenses:
+    name: License gate
+    runs-on: ubuntu-latest
+    needs: [version]
+    steps:
+      - name: Checkout private source
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.SOURCE_REPO }}
+          ref: ${{ github.event.inputs.ref || github.ref }}
+          token: ${{ secrets.REVYOU_PAT }}
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check licenses
+
   build:
     name: ${{ matrix.os }}
-    needs: [version, plan]
+    needs: [version, plan, licenses]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
