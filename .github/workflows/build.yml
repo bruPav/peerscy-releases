@@ -156,6 +156,7 @@ jobs:
           cp target/release/revyou dist/revyou/
           cp -L /usr/lib/x86_64-linux-gnu/libvulkan.so.1 dist/revyou/
           cp LICENSE dist/revyou/LICENSE
+          cp THIRD_PARTY_LICENSES.md dist/revyou/THIRD_PARTY_LICENSES.md
           cp revyou.desktop dist/revyou/
           cp packaging/linux/install.sh dist/revyou/
           mkdir -p dist/revyou/icon && cp -r icon/linux dist/revyou/icon/
@@ -174,6 +175,7 @@ jobs:
           Copy-Item target/release/revyou.exe dist/revyou/
           Copy-Item $loader dist/revyou/vulkan-1.dll
           Copy-Item LICENSE dist/revyou/LICENSE
+          Copy-Item THIRD_PARTY_LICENSES.md dist/revyou/THIRD_PARTY_LICENSES.md
           Compress-Archive -Path dist/revyou -DestinationPath revyou-windows-x86_64.zip
 
       - name: Package macOS (.app + dmg, universal)
@@ -184,6 +186,8 @@ jobs:
           cp target/release/revyou-universal "${APP}/Contents/MacOS/revyou"
           cp macos/Info.plist "${APP}/Contents/"
           cp icon/revyou.icns "${APP}/Contents/Resources/Revyou.icns"
+          cp THIRD_PARTY_LICENSES.md "${APP}/Contents/Resources/THIRD_PARTY_LICENSES.md"
+          cp LICENSE "${APP}/Contents/Resources/LICENSE"
           hdiutil create -volname "Revyou" -srcfolder "${APP}" \
             -ov -format UDZO "revyou-macos-universal.dmg"
 
