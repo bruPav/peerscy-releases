@@ -133,8 +133,22 @@ jobs:
           "$dir\cmake-$ver-windows-x86_64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           & "$dir\cmake-$ver-windows-x86_64\bin\cmake.exe" --version
 
+      # Use the Ninja generator on Windows: the Visual Studio generator emits
+      # `-Fo"dir\Debug\"` for the compiler-identification try_compile, which
+      # MSVC 19.44 (VS 17.14) rejects with C1083. Ninja passes a real object
+      # path instead. CMP0147 is a Visual-Studio-only policy, so Ninja also
+      # sidesteps the shader ExternalProject race the CMake pin below works
+      # around. Needs the MSVC environment on PATH for cl.exe.
+      - name: Configure MSVC environment (Windows / Ninja)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Build (release, Windows / Vulkan)
         if: runner.os == 'Windows'
+        env:
+          CMAKE_GENERATOR: Ninja
         run: cargo build --release --features gpu-vulkan
 
       - name: Build (release, macOS / Metal, universal2)
