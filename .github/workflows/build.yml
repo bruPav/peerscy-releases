@@ -133,20 +133,27 @@ jobs:
           "$dir\cmake-$ver-windows-x86_64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           & "$dir\cmake-$ver-windows-x86_64\bin\cmake.exe" --version
 
-      # Windows toolchain workaround. The runner's MSVC 19.44 (VS 17.14)
-      # rejects the directory-with-trailing-backslash form of /Fd and /Fo
-      # (`fatal error C1083: Cannot open compiler generated file: ''`) that
-      # CMake emits during its compiler-identification try_compile. Pin the
-      # older v142 toolset (MSVC 14.29), which accepts it, and use Ninja so
-      # CMP0147 (a Visual-Studio-only policy) is irrelevant. vcvars must run
-      # in the same step as the build so the environment persists.
+      # Ninja + a short target dir. The runner checkout path
+      # (D:\a\peerscy-releases\peerscy-releases) pushes llama.cpp's Vulkan
+      # shader object paths to 249/250 chars, over Windows' MAX_PATH limit,
+      # so cl fails with `C1083: Cannot open compiler generated file`. Build
+      # into D:\a\t instead. Ninja also avoids the Visual Studio generator's
+      # -Fo/-Fd directory quoting and CMP0147 (a VS-only policy; see the CMake
+      # pin below). Needs the MSVC environment on PATH for cl.exe.
+      - name: Configure MSVC environment (Windows / Ninja)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Build (release, Windows / Vulkan)
         if: runner.os == 'Windows'
-        shell: cmd
+        shell: pwsh
         env:
           CMAKE_GENERATOR: Ninja
+          CARGO_TARGET_DIR: D:\a\t
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" -vcvars_ver=14.29
+          "CARGO_TARGET_DIR=D:\a\t" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           cargo build --release --features gpu-vulkan
 
       - name: Build (release, macOS / Metal, universal2)
@@ -184,7 +191,7 @@ jobs:
               Select-Object -First 1).FullName
           }
           New-Item -ItemType Directory -Force -Path dist/peerscy | Out-Null
-          Copy-Item target/release/peerscy.exe dist/peerscy/
+          Copy-Item "$env:CARGO_TARGET_DIR/release/peerscy.exe" dist/peerscy/
           Copy-Item $loader dist/peerscy/vulkan-1.dll
           Copy-Item LICENSE dist/peerscy/LICENSE
           Copy-Item THIRD_PARTY_LICENSES.md dist/peerscy/THIRD_PARTY_LICENSES.md
