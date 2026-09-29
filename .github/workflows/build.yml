@@ -1,13 +1,13 @@
 name: Build
 
-# Builds Revyou for Linux, Windows and macOS from the private source repo and
+# Builds Peerscy for Linux, Windows and macOS from the private source repo and
 # publishes the binaries here. This repository is public only to hold the
 # compiled builds; the source stays private.
 on:
   workflow_dispatch:
     inputs:
       ref:
-        description: "Revyou ref to build (default: main)"
+        description: "Peerscy ref to build (default: main)"
         required: false
         default: main
       platforms:
@@ -22,7 +22,7 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
-  SOURCE_REPO: bruPav/Revyou
+  SOURCE_REPO: bruPav/peerscy
 
 jobs:
   version:
@@ -40,7 +40,7 @@ jobs:
         run: |
           V=$(grep -m1 '^version' Cargo.toml | sed -E 's/.*"(.*)".*/\1/')
           echo "version=$V" >> "$GITHUB_OUTPUT"
-          echo "Building Revyou v$V"
+          echo "Building Peerscy v$V"
 
   plan:
     name: Plan matrix
@@ -58,7 +58,7 @@ jobs:
           esac
           echo "matrix={\"os\":$M}" >> "$GITHUB_OUTPUT"
 
-  # Fail fast if a copyleft dependency (e.g. GPL) re-enters the tree: Revyou is
+  # Fail fast if a copyleft dependency (e.g. GPL) re-enters the tree: Peerscy is
   # distributed as a proprietary binary. Uses the private source's deny.toml.
   licenses:
     name: License gate
@@ -143,24 +143,24 @@ jobs:
           rustup target add x86_64-apple-darwin aarch64-apple-darwin
           cargo build --release --target x86_64-apple-darwin
           cargo build --release --target aarch64-apple-darwin
-          lipo -create -output target/release/revyou-universal \
-            target/x86_64-apple-darwin/release/revyou \
-            target/aarch64-apple-darwin/release/revyou
-          file target/release/revyou-universal
+          lipo -create -output target/release/peerscy-universal \
+            target/x86_64-apple-darwin/release/peerscy \
+            target/aarch64-apple-darwin/release/peerscy
+          file target/release/peerscy-universal
 
       - name: Package Linux (tar.gz, bundled Vulkan loader)
         if: runner.os == 'Linux'
         run: |
-          patchelf --set-rpath '$ORIGIN' target/release/revyou
-          mkdir -p dist/revyou
-          cp target/release/revyou dist/revyou/
-          cp -L /usr/lib/x86_64-linux-gnu/libvulkan.so.1 dist/revyou/
-          cp LICENSE dist/revyou/LICENSE
-          cp THIRD_PARTY_LICENSES.md dist/revyou/THIRD_PARTY_LICENSES.md
-          cp revyou.desktop dist/revyou/
-          cp packaging/linux/install.sh dist/revyou/
-          mkdir -p dist/revyou/icon && cp -r icon/linux dist/revyou/icon/
-          tar -czf revyou-linux-x86_64.tar.gz -C dist revyou
+          patchelf --set-rpath '$ORIGIN' target/release/peerscy
+          mkdir -p dist/peerscy
+          cp target/release/peerscy dist/peerscy/
+          cp -L /usr/lib/x86_64-linux-gnu/libvulkan.so.1 dist/peerscy/
+          cp LICENSE dist/peerscy/LICENSE
+          cp THIRD_PARTY_LICENSES.md dist/peerscy/THIRD_PARTY_LICENSES.md
+          cp peerscy.desktop dist/peerscy/
+          cp packaging/linux/install.sh dist/peerscy/
+          mkdir -p dist/peerscy/icon && cp -r icon/linux dist/peerscy/icon/
+          tar -czf peerscy-linux-x86_64.tar.gz -C dist peerscy
 
       - name: Package Windows (zip, bundled Vulkan loader)
         if: runner.os == 'Windows'
@@ -171,35 +171,35 @@ jobs:
             $loader = (Get-ChildItem -Path $env:VULKAN_SDK -Recurse -Filter 'vulkan-1.dll' |
               Select-Object -First 1).FullName
           }
-          New-Item -ItemType Directory -Force -Path dist/revyou | Out-Null
-          Copy-Item target/release/revyou.exe dist/revyou/
-          Copy-Item $loader dist/revyou/vulkan-1.dll
-          Copy-Item LICENSE dist/revyou/LICENSE
-          Copy-Item THIRD_PARTY_LICENSES.md dist/revyou/THIRD_PARTY_LICENSES.md
-          Compress-Archive -Path dist/revyou -DestinationPath revyou-windows-x86_64.zip
+          New-Item -ItemType Directory -Force -Path dist/peerscy | Out-Null
+          Copy-Item target/release/peerscy.exe dist/peerscy/
+          Copy-Item $loader dist/peerscy/vulkan-1.dll
+          Copy-Item LICENSE dist/peerscy/LICENSE
+          Copy-Item THIRD_PARTY_LICENSES.md dist/peerscy/THIRD_PARTY_LICENSES.md
+          Compress-Archive -Path dist/peerscy -DestinationPath peerscy-windows-x86_64.zip
 
       - name: Package macOS (.app + dmg, universal)
         if: runner.os == 'macOS'
         run: |
-          APP="Revyou.app"
+          APP="Peerscy.app"
           mkdir -p "${APP}/Contents/MacOS" "${APP}/Contents/Resources"
-          cp target/release/revyou-universal "${APP}/Contents/MacOS/revyou"
+          cp target/release/peerscy-universal "${APP}/Contents/MacOS/peerscy"
           cp macos/Info.plist "${APP}/Contents/"
-          cp icon/revyou.icns "${APP}/Contents/Resources/Revyou.icns"
+          cp icon/peerscy.icns "${APP}/Contents/Resources/Peerscy.icns"
           cp THIRD_PARTY_LICENSES.md "${APP}/Contents/Resources/THIRD_PARTY_LICENSES.md"
           cp LICENSE "${APP}/Contents/Resources/LICENSE"
-          hdiutil create -volname "Revyou" -srcfolder "${APP}" \
-            -ov -format UDZO "revyou-macos-universal.dmg"
+          hdiutil create -volname "Peerscy" -srcfolder "${APP}" \
+            -ov -format UDZO "peerscy-macos-universal.dmg"
 
       - name: Upload run artifact
         uses: actions/upload-artifact@v4
         with:
-          name: revyou-${{ matrix.os }}
+          name: peerscy-${{ matrix.os }}
           if-no-files-found: error
           path: |
-            revyou-linux-x86_64.tar.gz
-            revyou-windows-x86_64.zip
-            revyou-macos-universal.dmg
+            peerscy-linux-x86_64.tar.gz
+            peerscy-windows-x86_64.zip
+            peerscy-macos-universal.dmg
 
   release:
     name: Publish release
@@ -219,10 +219,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.version.outputs.version }}
-          name: Revyou v${{ needs.version.outputs.version }}
+          name: Peerscy v${{ needs.version.outputs.version }}
           make_latest: true
           body: |
-            Automated builds of Revyou v${{ needs.version.outputs.version }}.
+            Automated builds of Peerscy v${{ needs.version.outputs.version }}.
 
             - Linux: x86_64, GPU (Vulkan)
             - Windows: x86_64, GPU (Vulkan)
@@ -231,9 +231,9 @@ jobs:
             Unsigned: macOS needs right-click → Open on first launch; Windows
             SmartScreen may warn.
           files: |
-            artifacts/revyou-linux-x86_64.tar.gz
-            artifacts/revyou-windows-x86_64.zip
-            artifacts/revyou-macos-universal.dmg
+            artifacts/peerscy-linux-x86_64.tar.gz
+            artifacts/peerscy-windows-x86_64.zip
+            artifacts/peerscy-macos-universal.dmg
           fail_on_unmatched_files: true
 
       # Mirror the binaries to Cloudflare R2 so downloads.revyoutech.org serves
