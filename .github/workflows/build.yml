@@ -234,6 +234,10 @@ jobs:
           path: artifacts
           merge-multiple: true
 
+      - name: Generate SHA-256 checksums
+        working-directory: artifacts
+        run: sha256sum peerscy-linux-x86_64.tar.gz peerscy-windows-x86_64.zip peerscy-macos-universal.dmg > SHA256SUMS
+
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -248,11 +252,13 @@ jobs:
             - macOS: universal (Intel + Apple Silicon), Metal
 
             Unsigned: macOS needs right-click → Open on first launch; Windows
-            SmartScreen may warn.
+            SmartScreen may warn. Verify downloads with the attached
+            `SHA256SUMS`.
           files: |
             artifacts/peerscy-linux-x86_64.tar.gz
             artifacts/peerscy-windows-x86_64.zip
             artifacts/peerscy-macos-universal.dmg
+            artifacts/SHA256SUMS
           fail_on_unmatched_files: true
 
       # Mirror the binaries to Cloudflare R2 so downloads.revyoutech.org serves
