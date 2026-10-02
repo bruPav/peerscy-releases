@@ -238,6 +238,14 @@ jobs:
         working-directory: artifacts
         run: sha256sum peerscy-linux-x86_64.tar.gz peerscy-windows-x86_64.zip peerscy-macos-universal.dmg > SHA256SUMS
 
+      - name: Sign checksums (GPG)
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          gpg --batch --yes --armor --detach-sign --output artifacts/SHA256SUMS.asc artifacts/SHA256SUMS
+          gpg --batch --verify artifacts/SHA256SUMS.asc artifacts/SHA256SUMS
+
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -253,12 +261,14 @@ jobs:
 
             Unsigned: macOS needs right-click → Open on first launch; Windows
             SmartScreen may warn. Verify downloads with the attached
-            `SHA256SUMS`.
+            `SHA256SUMS` (and its GPG signature `SHA256SUMS.asc`; public key at
+            https://revyoutech.org/security).
           files: |
             artifacts/peerscy-linux-x86_64.tar.gz
             artifacts/peerscy-windows-x86_64.zip
             artifacts/peerscy-macos-universal.dmg
             artifacts/SHA256SUMS
+            artifacts/SHA256SUMS.asc
           fail_on_unmatched_files: true
 
       # Mirror the binaries to Cloudflare R2 so downloads.revyoutech.org serves
